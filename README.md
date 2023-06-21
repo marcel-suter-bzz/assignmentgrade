@@ -5,7 +5,7 @@ The plugin is not limited to use with GitHub Classroom, it should work with any 
 ### Limitations
 At this time the plugin only works with individual assignments
 ### Disclaimer
-This plugin is being developed for my own classes and is still in testing. I try to make this plugin as save and error free as possible. I cannot give any guarantees or accept any liability if you use this plugin in your Moodle installation. Before use I encourage you to study the source code (any give me feedback if you find any flaws) and install it in a test instance. 
+This plugin is being developed for my own classes and is still in testing. I try to make this plugin as safe and error free as possible. I cannot give any guarantees or accept any liability if you use this plugin in your Moodle installation. Before use I encourage you to study the source code (any give me feedback if you find any flaws) and install it in a test instance. 
 ## Installation and configuration
 ### External username
 To match the grades to the correct user, the username in the external system (i.e. Classroom, ...) must be set in the Moodle user profile. To add an additional field to the user profile see https://docs.moodle.org/402/en/User_profile_fields.
