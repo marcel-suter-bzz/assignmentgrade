@@ -1,6 +1,34 @@
-# assignmentgrade
-This plugin is used for grading an assignment from an external system.
+# Assignment Export
 
+This Moodle plugin was developed to update the students grade from the results of a GitHub Classroom assignment. The repository in the Classroom assignment contains an action with a number of test cases. This plugin allows me to export the resulting points total to the corresponding Moodle assignment.
+The plugin is not limited to use with GitHub Classroom, it should work with any external system.
+### Limitations
+At this time the plugin only works with individual assignments
+### Disclaimer
+This plugin is being developed for my own classes and is still in testing. I try to make this plugin as save and error free as possible. I cannot give any guarantees or accept any liability if you use this plugin in your Moodle installation. Before use I encourage you to study the source code (any give me feedback if you find any flaws) and install it in a test instance. 
+## Installation and configuration
+### External username
+To match the grades to the correct user, the username in the external system (i.e. Classroom, ...) must be set in the Moodle user profile. To add an additional field to the user profile see https://docs.moodle.org/402/en/User_profile_fields.
+This (FIXME add screenshot) shows my setup.
+### Assignment name
+The Moodle assignment needs a custom field to save the name of the assignment in the external system. Moodle core does not support custom fields for assignments, therefore this plugin requires https://moodle.org/plugins/local_modcustomfields by Daniel Neis Araujo. Install the modcustomfields plugin first and add a custom field.
+This (FIXME add screenshot) shows my setup.
+### Installation
+Download this plugin as a zip-archive and install it in your Moodle. During installation you will be asked to specify the shortnames of the two custom fields:
 
-## Installation
-### Requirements
+ - external username
+ - assignment name
+### Webservice
+Create a new external webservice in your Moodle (https://docs.moodle.org/402/en/Using_web_services).
+TODO required permissions for user and webservice
+## Usage with GitHub Classroom
+This section explains how our school uses the plugin with GitHub Classroom (see also https://classroom.github.com/videos).
+### User profile in Moodle
+Add the GitHub username to the Moodle profile of your students. 
+### Create template repository
+The template repository contains the starting code for your students, a number of tests and a workflow for the autograding in GitHub Classroom. https://github.com/BZZ-Commons/python-template shows the basic template we use at our school.
+### Create assignments
+Create an assignment in GitHub Classroom. 
+Create a Moodle assignment and enter the name of the GitHub Classroom assignment in the custom field.
+### Auto grading
+After the students accept the assignment they solve the assignment and push their code to GitHub. With every push the GitHub workflow runs the tests and calls the Moodle webservice to update the grade for this student.
