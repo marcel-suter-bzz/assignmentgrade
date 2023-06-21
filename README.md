@@ -1,4 +1,4 @@
-# Assignment Export
+# Assignment Grade
 
 This Moodle plugin was developed to update the students grade from the results of a GitHub Classroom assignment. The repository in the Classroom assignment contains an action with a number of test cases. This plugin allows me to export the resulting points total to the corresponding Moodle assignment.
 The plugin is not limited to use with GitHub Classroom, it should work with any external system.
