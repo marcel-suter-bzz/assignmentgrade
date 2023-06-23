@@ -56,11 +56,6 @@ class update_grade extends \external_api
      */
     public static function execute($assignment_name, $user_name, $points)
     {
-        global $CFG, $DB;
-        $custom_fields = custom_field_ids();
-
-        require_once('$CFG->dirroot/grade/lib.php');
-
         $params = self::validate_parameters(
             self::execute_parameters(),
             array(
@@ -69,26 +64,26 @@ class update_grade extends \external_api
                 'points' => $points
             )
         );
-
+        $custom_fields = custom_field_ids();
         $user_id = self::get_user_id($params['user_name'], $custom_fields);
-        $assignments = self::get_assignments_by_name(
-            $assignment_name,
-            $custom_fields
-        );
+        if (!empty($user_id)) {
+            $courses = self::get_enrolled_courses($user_id);
 
-        $courses = self::get_enrolled_courses($user_id);
+            $assignments = self::get_assignments_by_name(
+                $assignment_name,
+                $custom_fields
+            );
 
+            foreach ($assignments as $assignment) {
 
-        foreach ($assignments as $assignment) {
-            echo "\nassignment_id:" . $assignment->assignmentid;
-
-            if (in_array($assignment->courseid, $courses)) {
-                self::update_grade(
-                    $assignment->courseid,
-                    $assignment->assignmentid,
-                    $user_id,
-                    $params['points']
-                );
+                if (in_array($assignment->courseid, $courses)) {
+                    self::update_grade(
+                        $assignment->courseid,
+                        $assignment->assignmentid,
+                        $user_id,
+                        $params['points']
+                    );
+                }
             }
         }
 
@@ -143,7 +138,6 @@ class update_grade extends \external_api
                 false
             );
         } else {
-
             $DB->insert_record(
                 'assign_grades',
                 $grade,
