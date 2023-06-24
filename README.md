@@ -65,14 +65,13 @@ jobs:
           grade=${{ steps.autograding.outputs.Points }}
           parts=(${grade//\// })
           points="points=${parts[0]}"
-          
           user="user_name=${{ github.actor }}"
           
           repofull=${{ github.repository }}
           parts=(${repofull//\// })
           reponame=${parts[1]}
-          assignment="${reponame/"-${{ github.actor }}"/""}"
-          assignment="assignment_name=$assignment"
+          template="${reponame/"-${{ github.actor }}"/""}"
+          assignment="assignment_name=$template"
 
           wsfunction="wsfunction=local_gradeassignments_update_grade"
           wstoken="wstoken=${{ secrets.MOODLE_TOKEN }}"
