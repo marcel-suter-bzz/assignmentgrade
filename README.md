@@ -1,3 +1,4 @@
+
 # Assignment Grade
 
 This Moodle plugin is being developed to update the students grade from the results of a GitHub Classroom assignment. In the repository is a workflow that executes a number of test cases and calculates the total. This plugin allows me to export the resulting points to the corresponding Moodle assignment.
@@ -14,7 +15,7 @@ To match the grades to the correct user, the username in the external system (i.
 This screenshot shows my setup:
 ![Custom field for user profile](https://it.bzz.ch/wikiV2/_media/howto/git/grading/classroom_moodle_userprofile.png)
 ####  1.2. Field for assignment name
-The Moodle assignment needs a custom field to save the name of the assignment in the external system. Moodle core does not support custom fields for assignments, therefore this plugin requires https://moodle.org/plugins/local_modcustomfields by Daniel Neis Araujo. Install the modcustomfields plugin first and add a custom field.
+The Moodle assignment needs a custom field to save the name of the assignment in the external system. Moodle core does not support custom fields for assignments, therefore this plugin requires https://moodle.org/plugins/local_modcustomfields by Daniel Neis Araujo. Install the **modcustomfields** plugin first and add a custom field.
 This shows my setup.
 ![Custom field for activity](https://it.bzz.ch/wikiV2/_media/howto/git/grading/classroom_moodle_customfield.png)
 
@@ -83,12 +84,20 @@ jobs:
 
 ```
 #### 2.1. Secret and Variable
-The workflow requires the URL of the moodle webservice. This value can be saved as a variable `MOODLE_URL` in the repository or the GitHub organization.
-To authenticate the request, the workflow also needs the moodle token you generated for the webservice. This will be saved as a secret `MOODLE_TOKEN` in the GitHub organization.
+The workflow requires the URL of the moodle webservice. You may save this value as a variable `MOODLE_URL` in the repository of the GitHub organization.
+To authenticate the request, the workflow also needs the Moodle token you generated for the webservice. This will be saved as a secret `MOODLE_TOKEN` in the GitHub organization.
 
 ### 3. Create assignments
-Create an assignment in GitHub Classroom. 
-Create a Moodle assignment and enter the name of the GitHub Classroom assignment in the custom field.
+
+ 1. Create the assignment in GitHub Classroom. 
+ 2. Create the Moodle assignment and enter the name of the GitHub Classroom assignment in the custom field.
+
 ### 4. Auto grading
 After the students accept the assignment they solve the assignment and push their code to GitHub. With every push the GitHub workflow runs the tests and calls the Moodle webservice to update the grade for this student.
+
+If you experience lag because of too many requests to the Moodle server, you could tweak the workflow:
+
+ - Run the step only for the main/master-branch.
+ - Run the step only if a certain word is in the commit message.
+
 
