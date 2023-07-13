@@ -31,6 +31,12 @@ class update_grade extends \external_api
                 'points' => new external_value(
                     PARAM_FLOAT,
                     'the points for grading'
+                ),
+                'feedback' => new external_value(
+                    PARAM_TEXT,
+                    'the feedback for this grade',
+                    0,
+                    '[]'
                 )
             )
         );
@@ -54,7 +60,7 @@ class update_grade extends \external_api
      * @throws \dml_exception
      * @throws \invalid_parameter_exception
      */
-    public static function execute($assignment_name, $user_name, $points)
+    public static function execute($assignment_name, $user_name, $points, $feedback)
     {
         $params = self::validate_parameters(
             self::execute_parameters(),
@@ -77,12 +83,20 @@ class update_grade extends \external_api
             foreach ($assignments as $assignment) {
 
                 if (in_array($assignment->courseid, $courses)) {
-                    self::update_grade(
+                    $gradeid = self::update_grade(
                         $assignment->courseid,
                         $assignment->assignmentid,
                         $user_id,
                         $params['points']
                     );
+
+                    if ($feedback !== '[]') {
+                        self::update_feedback(
+                            $assignment->assignmentid,
+                            $gradeid,
+                            $feedback
+                        );
+                    }
                 }
             }
         }
@@ -133,15 +147,71 @@ class update_grade extends \external_api
                 false
             );
         } else {
-            $DB->insert_record(
+            $gradeid = $DB->insert_record(
                 'assign_grades',
                 $grade,
+                true,
+                false
+            );
+        }
+        return $gradeid;
+    }
+
+    private static function update_feedback(
+        $assignment_id,
+        $grade_id,
+        $feedback
+    )
+    {
+        global $DB;
+        $feedbackid = $DB->get_field(
+            'assignfeedback_comments',
+            'id',
+            array(
+                'assignment' => $assignment_id,
+                'grade' => $grade_id
+            )
+        );
+        $text = new \stdClass;
+        $text->assignment = $assignment_id;
+        $text->grade = $grade_id;
+        $text->commenttext = 'foobar';
+        $text->commentformat = 1;
+        if ($feedbackid) {
+            $text->id = $feedbackid;
+            $DB->update_record(
+                'assignfeedback_comments',
+                $text,
+                false
+            );
+        } else {
+            $DB->insert_record(
+                'assignfeedback_comments',
+                $text,
                 false,
                 false
             );
         }
     }
 
+    static function feedback_table($feedback)
+    {
+        $fields = ['message', 'expected', 'actual'];
+        $html = '';
+        $messages = json_decode($feedback);
+        if (count($messages) > 0) {
+            $html = '<table><thead><tr><th>Testfall</th><th>Meldung</th><th>Erwartetes Resultat</th><th>Tatsächliches Resultat</th></tr></thead><tbody>';
+            foreach ($messages as $message) {
+                $html .= '<tr>';
+                foreach ($fields as $key) {
+                    $html .= "<td>$message[$key]</td>";
+                }
+                $html .= '</tr>'
+}
+        }
+        $html .= '</tbody></table>';
+        return $html;
+    }
 
     /**
      * get the moodle assignment by the external name
@@ -151,7 +221,8 @@ class update_grade extends \external_api
      * @throws \dml_exception
      */
 
-    private static function get_assignments_by_name(
+    private
+    static function get_assignments_by_name(
         $assignment_name,
         $custom_fields
     )
@@ -184,7 +255,8 @@ class update_grade extends \external_api
      * @return array
      * @throws \dml_exception
      */
-    private static function get_enrolled_courses($user_id)
+    private
+    static function get_enrolled_courses($user_id)
     {
         global $DB;
 
@@ -213,7 +285,8 @@ class update_grade extends \external_api
      * @return void
      * @throws \dml_exception
      */
-    private static function get_user_id($user_name, $custom_fields)
+    private
+    static function get_user_id($user_name, $custom_fields)
     {
         global $DB;
         $query = 'SELECT userid' .
