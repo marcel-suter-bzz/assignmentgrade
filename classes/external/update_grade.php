@@ -108,11 +108,6 @@ class update_grade extends \external_api
     )
     {
         global $DB;
-        echo "\nupdate_grade";
-        echo "\ncourse_id: $course_id";
-        echo "\nassignment_id: $assignment_id";
-        echo "\nuser_id: $user_id";
-        echo "\npoints: $points";
 
         $gradeid = $DB->get_field(
             'assign_grades',
@@ -162,8 +157,6 @@ class update_grade extends \external_api
     )
     {
         global $DB, $CFG;
-        echo "\nfieldid: " . $custom_fields['classroom_assignment'];
-        echo "\nassignmentname: $assignment_name";
 
         $query = 'SELECT a.id AS assignmentid, a.name, a.course AS courseid' .
             '  FROM mdl_customfield_data AS cfd' .
@@ -180,7 +173,6 @@ class update_grade extends \external_api
                 'assignmentname' => $assignment_name
             ]
         );
-        echo "\nassignments=";
         print_r($assignments);
 
         return $assignments;
@@ -196,7 +188,6 @@ class update_grade extends \external_api
     {
         global $DB;
 
-        echo "\nuserid: $user_id";
         $query = 'SELECT e.id, e.courseid' .
             '  FROM mdl_user_enrolments AS ue' .
             '  JOIN mdl_enrol AS e ON (ue.enrolid=e.id)' .
@@ -207,8 +198,7 @@ class update_grade extends \external_api
                 'userid' => $user_id
             ]
         );
-        echo "\ncourses=";
-        print_r($courses);
+
         $course_ids = array();
         foreach ($courses as $course) {
             $course_ids[] = $course->courseid;
