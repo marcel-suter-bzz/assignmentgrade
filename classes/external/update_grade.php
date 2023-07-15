@@ -194,6 +194,9 @@ class update_grade extends \external_api
         }
     }
 
+    /**
+     * convert feedback from json to html table
+     */
     static function feedback_table($feedback)
     {
         $fields = ['message', 'expected', 'actual'];
@@ -206,10 +209,11 @@ class update_grade extends \external_api
                 foreach ($fields as $key) {
                     $html .= "<td>$message[$key]</td>";
                 }
-                $html .= '</tr>'
+                $html .= '</tr>';
 }
         }
         $html .= '</tbody></table>';
+        echo "table: $html";
         return $html;
     }
 
