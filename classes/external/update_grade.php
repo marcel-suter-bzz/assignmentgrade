@@ -4,11 +4,13 @@
 namespace local_gradeassignments\external;
 global $CFG;
 require_once("$CFG->dirroot/lib/externallib.php");
+require_once("$CFG->dirroot/mod/assign/externallib.php");
 require_once("customfields.php");
 
 use external_function_parameters;
 use external_single_structure;
 use external_value;
+use mod_assign_external;
 
 class update_grade extends \external_api
 {
@@ -31,6 +33,12 @@ class update_grade extends \external_api
                 'points' => new external_value(
                     PARAM_FLOAT,
                     'the points for grading'
+                ),
+                'feedback' => new external_value(
+                    PARAM_TEXT,
+                    'the feedback for this grade',
+                    0,
+                    '[]'
                 )
             )
         );
@@ -54,7 +62,7 @@ class update_grade extends \external_api
      * @throws \dml_exception
      * @throws \invalid_parameter_exception
      */
-    public static function execute($assignment_name, $user_name, $points)
+    public static function execute($assignment_name, $user_name, $points, $feedback)
     {
         $params = self::validate_parameters(
             self::execute_parameters(),
@@ -77,76 +85,81 @@ class update_grade extends \external_api
             foreach ($assignments as $assignment) {
 
                 if (in_array($assignment->courseid, $courses)) {
-                    self::update_grade(
-                        $assignment->courseid,
+                    self::update_mod_grade(
                         $assignment->assignmentid,
                         $user_id,
-                        $params['points']
+                        $params['points'],
+                        $feedback
                     );
                 }
             }
+            if (empty($assignments)) {
+                echo 'WARNING: no assignment ' . $assignment_name . ' found';
+            }
+        } else {
+            echo 'WARNING: no username ' . $params['user_name'] . ' found';
         }
 
 
         return array();
     }
 
-    /**
-     * update the user's grade for the assignment
-     * @param $course_id
-     * @param $assignment_id
-     * @param $user_id
-     * @param $points
-     * @return void
-     * @throws \dml_exception
-     */
-    private static function update_grade(
-        $course_id,
+    private static function update_mod_grade(
         $assignment_id,
         $user_id,
-        $points
-    )
-    {
-        global $DB;
-        echo "\nupdate_grade";
-        echo "\ncourse_id: $course_id";
-        echo "\nassignment_id: $assignment_id";
-        echo "\nuser_id: $user_id";
-        echo "\npoints: $points";
-
-        $gradeid = $DB->get_field(
-            'assign_grades',
-            'id',
-            array(
-                'assignment' => $assignment_id,
-                'userid' => $user_id
-            )
-        );
-        $grade = new \stdClass;
-        $grade->assignment = $assignment_id;
-        $grade->userid = $user_id;
-        $grade->grade = $points;
-        $grade->grader = 2;  // FIXME
-        $grade->timecreated = time();
-        $grade->timemodified = time();
-
-        if ($gradeid) {
-            $grade->id = $gradeid;
-            $DB->update_record(
-                'assign_grades',
-                $grade,
-                false
-            );
+        $points,
+        $feedback
+    ) {
+        if ($feedback !== '[]') {
+            $commenttext = self::feedback_table($feedback);
         } else {
-            $DB->insert_record(
-                'assign_grades',
-                $grade,
-                false,
-                false
-            );
+            $commenttext = '';
         }
+        $plugindata = array(
+            'assignfeedbackcomments_editor' => array('text'=> $commenttext, 'format' =>'1')
+        );
+        $mod_assign_external = new mod_assign_external();
+        $mod_assign_external->save_grade(
+            $assignment_id,
+            $user_id,
+            $points,
+            -1,
+            0,
+            'graded',
+            '1',
+            $plugindata
+        );
     }
 
+
+    /**
+     * convert feedback from json to html table
+     * @param $feedback json-string
+     */
+    static function feedback_table($feedback)
+    {
+        $messages = json_decode(stripslashes($feedback), true);
+        if (count($messages) > 0) {
+            $thead = '<table border="1px solid black"><thead><tr>';
+            $first_row = true;
+            $tbody = '<tbody>';
+
+            foreach ($messages as $message) {
+                $tbody .= '<tr>';
+                foreach ($message as $key => $value) {
+                    if ($first_row) {
+                        $thead .= '<th>' . $key . '</th>';
+                        $first_row = false;
+                    }
+                    $tbody .= "<td>" . $value . "</td>";
+                }
+                $tbody .= '</tr>';
+            }
+        }
+        $thead .= '</thead><tbody>';
+        $html = $thead . $tbody . '</tbody></table>';
+        return $html;
+    }
 
     /**
      * get the moodle assignment by the external name
@@ -156,14 +169,13 @@ class update_grade extends \external_api
      * @throws \dml_exception
      */
 
-    private static function get_assignments_by_name(
+    private
+    static function get_assignments_by_name(
         $assignment_name,
         $custom_fields
     )
     {
         global $DB, $CFG;
-        echo "\nfieldid: " . $custom_fields['classroom_assignment'];
-        echo "\nassignmentname: $assignment_name";
 
         $query = 'SELECT a.id AS assignmentid, a.name, a.course AS courseid' .
             '  FROM mdl_customfield_data AS cfd' .
@@ -180,8 +192,6 @@ class update_grade extends \external_api
                 'assignmentname' => $assignment_name
             ]
         );
-        echo "\nassignments=";
-        print_r($assignments);
 
         return $assignments;
     }
@@ -192,11 +202,11 @@ class update_grade extends \external_api
      * @return array
      * @throws \dml_exception
      */
-    private static function get_enrolled_courses($user_id)
+    private
+    static function get_enrolled_courses($user_id)
     {
         global $DB;
 
-        echo "\nuserid: $user_id";
         $query = 'SELECT e.id, e.courseid' .
             '  FROM mdl_user_enrolments AS ue' .
             '  JOIN mdl_enrol AS e ON (ue.enrolid=e.id)' .
@@ -207,8 +217,7 @@ class update_grade extends \external_api
                 'userid' => $user_id
             ]
         );
-        echo "\ncourses=";
-        print_r($courses);
+
         $course_ids = array();
         foreach ($courses as $course) {
             $course_ids[] = $course->courseid;
@@ -220,10 +229,11 @@ class update_grade extends \external_api
      * returns the moodle userid by the external username
      * @param $user_name
      * @param $custom_fields
-     * @return void
+     * @return int
      * @throws \dml_exception
      */
-    private static function get_user_id($user_name, $custom_fields)
+    private
+    static function get_user_id($user_name, $custom_fields)
     {
         global $DB;
         $query = 'SELECT userid' .
@@ -237,6 +247,7 @@ class update_grade extends \external_api
                 'ghusername' => $user_name
             ]
         );
-        return $user->userid;
+        if (property_exists($user->userid)) return $user->userid;
+        else return null;
     }
 }
