@@ -148,12 +148,12 @@ class update_grade extends \external_api
                 $tbody .= '<tr>';
                 foreach ($message as $key => $value) {
                     if ($first_row) {
-                        $thead .= '<th>' . $key . '</th>';
-                        $first_row = false;
+                        $thead .= '<th>' . $key . '</th>'
                     }
                     $tbody .= "<td>" . $value . "</td>";
                 }
                 $tbody .= '</tr>';
+                $first_row = false;
             }
         }
         $thead .= '</thead><tbody>';
