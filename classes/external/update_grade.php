@@ -34,6 +34,10 @@ class update_grade extends \external_api
                     PARAM_FLOAT,
                     'the points for grading'
                 ),
+                'max' => new external_value(
+                    PARAM_FLOAT,
+                    'the maximum points'
+                ),
                 'feedback' => new external_value(
                     PARAM_TEXT,
                     'the feedback for this grade',
@@ -62,14 +66,15 @@ class update_grade extends \external_api
      * @throws \dml_exception
      * @throws \invalid_parameter_exception
      */
-    public static function execute($assignment_name, $user_name, $points, $feedback)
+    public static function execute($assignment_name, $user_name, $points, $max, $feedback)
     {
         $params = self::validate_parameters(
             self::execute_parameters(),
             array(
                 'assignment_name' => $assignment_name,
                 'user_name' => $user_name,
-                'points' => $points
+                'points' => $points,
+                'max' => $max
             )
         );
         $custom_fields = custom_field_ids();
@@ -89,6 +94,8 @@ class update_grade extends \external_api
                         $assignment->assignmentid,
                         $user_id,
                         $params['points'],
+                        $params['max'],
+                        $assignment->grade,
                         $feedback
                     );
                 }
@@ -104,20 +111,36 @@ class update_grade extends \external_api
         return array();
     }
 
+    /**
+     * update the points and feedback for an assignment
+     *
+     * @param $assignment_id  the id of the assignment
+     * @param $user_id  the moodle userid
+     * @param $points   the points achieved
+     * @param $max      the maximum points from the tests
+     * @param $grade    the maximum grade from moodle
+     * @param $feedback feedback as JSON-structure
+     * @return void
+     */
     private static function update_mod_grade(
         $assignment_id,
         $user_id,
         $points,
+        $max,
+        $grade,
         $feedback
     ) {
         if ($feedback !== '[]') {
-            $commenttext = self::feedback_table($feedback);
+            $commenttext = self::feedback_table($points, $max, $feedback);
         } else {
             $commenttext = '';
         }
         $plugindata = array(
             'assignfeedbackcomments_editor' => array('text'=> $commenttext, 'format' =>'1')
         );
+        if ($max > 0) {
+            $points = $points * $grade / $max;
+        }
         $mod_assign_external = new mod_assign_external();
         $mod_assign_external->save_grade(
             $assignment_id,
@@ -136,28 +159,44 @@ class update_grade extends \external_api
      * convert feedback from json to html table
      * @param $feedback json-string
      */
-    static function feedback_table($feedback)
+    static function feedback_table($points, $max, $feedback)
     {
+        $fields = [
+            'testcase',
+            'outcome',
+            'message',
+            'expected',
+            'points',
+            'max'
+        ];
         $messages = json_decode(stripslashes($feedback), true);
+        $html = '';
         if (count($messages) > 0) {
-            $thead = '<table border="1px solid black"><thead><tr>';
-            $first_row = true;
-            $tbody = '<tbody>';
+            $html = '<table border="1px solid black"><thead><tr>';
+            foreach ($fields as $field) {
+                $html .= '<th>' . $field . '</th>';
+            }
+            $html .= '</tr></thead>';
+            $html .= '<tbody>';
 
             foreach ($messages as $message) {
-                $tbody .= '<tr>';
-                foreach ($message as $key => $value) {
-                    if ($first_row) {
-                        $thead .= '<th>' . $key . '</th>'
+                $html .= '<tr>';
+                foreach ($fields as $field) {
+                    $html .= '<td>';
+                    if (array_key_exists($field, $message)) {
+                        $html .= $message[$field];
                     }
-                    $tbody .= "<td>" . $value . "</td>";
+                    $html .= '</td>';
                 }
-                $tbody .= '</tr>';
-                $first_row = false;
+                $html .= '</tr>';
             }
+            $html .= '</tbody><tfoot><tr><th colspan="2">&nbsp;</th>';
+            $html .= '<th colspan="2">Total: ' . ($points * 100 / $max) . ' %</th>';
+            $html .= '<th>'.$points .'</th>';
+            $html .= '<th>'.$max .'</th>';
+            $html .= '</tr></tfoot></table>';
         }
-        $thead .= '</thead><tbody>';
-        $html = $thead . $tbody . '</tbody></table>';
+
         return $html;
     }
 
@@ -177,7 +216,7 @@ class update_grade extends \external_api
     {
         global $DB, $CFG;
 
-        $query = 'SELECT a.id AS assignmentid, a.name, a.course AS courseid' .
+        $query = 'SELECT a.id AS assignmentid, a.name, a.course AS courseid, a.grade' .
             '  FROM mdl_customfield_data AS cfd' .
             '  JOIN mdl_course_modules AS cm ON (cm.id=cfd.instanceid)' .
             '  JOIN mdl_assign AS a ON (cm.instance=a.id)' .
@@ -247,7 +286,7 @@ class update_grade extends \external_api
                 'ghusername' => $user_name
             ]
         );
-        if (property_exists($user->userid)) return $user->userid;
+        if (!empty($user)) return $user->userid;
         else return null;
     }
 }

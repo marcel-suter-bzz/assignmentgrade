@@ -23,10 +23,10 @@
  */
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2023062003;
+$plugin->version = 2023111102;
 $plugin->requires = 2015111000;
 $plugin->component = 'local_gradeassignments';
 $plugin->dependencies = array(
-    'local_modcustomfields' => 2022111100, // mod for custom fields in activities
+    'local_modcustomfields' => 2023110600, // mod for custom fields in activities
 );
 $plugin->maturity = MATURITY_BETA;
