@@ -38,6 +38,12 @@ class update_grade extends \external_api
                     PARAM_FLOAT,
                     'the maximum points'
                 ),
+                'repourl' => new external_value(
+                    PARAM_TEXT,
+                    'the url of the student repository',
+                    0,
+                    ''
+                ),
                 'feedback' => new external_value(
                     PARAM_TEXT,
                     'the feedback for this grade',
@@ -62,11 +68,14 @@ class update_grade extends \external_api
      * @param $assignment_name  the name of the external assignment
      * @param $user_name  the external username
      * @param $points the number of points
+     * @param $max  the maximum points from tests
+     * @param $repourl  the url of the students repo
+     * @param $feedback  the feedback as json-structure
      * @return array
      * @throws \dml_exception
      * @throws \invalid_parameter_exception
      */
-    public static function execute($assignment_name, $user_name, $points, $max, $feedback)
+    public static function execute($assignment_name, $user_name, $points, $max, $repourl, $feedback)
     {
         $params = self::validate_parameters(
             self::execute_parameters(),
@@ -74,7 +83,8 @@ class update_grade extends \external_api
                 'assignment_name' => $assignment_name,
                 'user_name' => $user_name,
                 'points' => $points,
-                'max' => $max
+                'max' => $max,
+                'repourl' => $repourl
             )
         );
         $custom_fields = custom_field_ids();
@@ -96,6 +106,7 @@ class update_grade extends \external_api
                         $params['points'],
                         $params['max'],
                         $assignment->grade,
+                        $params['repourl'],
                         $feedback
                     );
                 }
@@ -119,6 +130,7 @@ class update_grade extends \external_api
      * @param $points   the points achieved
      * @param $max      the maximum points from the tests
      * @param $grade    the maximum grade from moodle
+     * @param $repourl  the url of the student repo
      * @param $feedback feedback as JSON-structure
      * @return void
      */
@@ -128,6 +140,7 @@ class update_grade extends \external_api
         $points,
         $max,
         $grade,
+        $repourl,
         $feedback
     ) {
         if ($feedback !== '[]') {
@@ -135,6 +148,11 @@ class update_grade extends \external_api
         } else {
             $commenttext = '';
         }
+
+        if ($repourl !== '') {
+            $commenttext .= '<p><a href="' . $repourl . '">' . $repourl . '</a></p>';
+        }
+
         $plugindata = array(
             'assignfeedbackcomments_editor' => array('text'=> $commenttext, 'format' =>'1')
         );
