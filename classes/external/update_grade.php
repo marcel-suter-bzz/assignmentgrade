@@ -150,7 +150,7 @@ class update_grade extends \external_api
         }
 
         if ($repourl !== '') {
-            $commenttext .= '<p><a href="' . $repourl . '">' . $repourl . '</a></p>';
+            $commenttext .= '<p><a href="https://github.com/' . $repourl . '">https://github.com/' . $repourl . '</a></p>';
         }
 
         $plugindata = array(
