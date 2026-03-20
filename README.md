@@ -1,3 +1,5 @@
+# New repository
+The current version is at https://github.com/BZZ-Commons/moodle-mod-externalassignment
 
 # Assignment Grade
 
